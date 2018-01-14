@@ -29,7 +29,8 @@ extern enum verbosity global_verbosity;
 #define LONG_PROGNAME "tizian"
 #define PROGNAME "tznct"
 
-static inline void print_error(const char *s) {
+static inline void print_error(const char *s)
+{
 	if (global_verbosity == VERBOSE)
 		perror(s);
 }

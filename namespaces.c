@@ -68,9 +68,9 @@ int setup_netns(unsigned char *id, const char *ip_prefix, int enable_net)
 	char vhs[19], vgs[19], vhs2[16];
 	FILE *f;
 
-	for (i=0; i < MAX_RETRIES; ++i) {
+	for (i = 0; i < MAX_RETRIES; ++i) {
 		_id = random_id();
-		if (NEW_CONT_ID == _id)
+		if (_id == NEW_CONT_ID)
 			continue;
 		snprintf(vh, sizeof(vh), NETNS_PREFIX"0_%hhu", _id);
 		snprintf(vg, sizeof(vg), NETNS_PREFIX"1_%hhu", _id);
@@ -218,7 +218,7 @@ int delete_netns(const unsigned char id, const char *ip_prefix, int enable_net)
 			print_error("Can't delete forward 2");
 			return -1;
 		}
-		if (run_cmd((char *const []){"iptables", "-t", "nat", "-D", 
+		if (run_cmd((char *const []){"iptables", "-t", "nat", "-D",
 					"POSTROUTING", "-s", vgs, "-j",
 					"MASQUERADE", NULL})) {
 			print_error("Can't delete masq");
@@ -243,20 +243,19 @@ int set_netns(const unsigned char id)
 
 	snprintf(path, sizeof(path), "/var/run/netns/" NETNS_PREFIX "1_%hhu", id);
 	fd = open(path, O_RDONLY|O_CLOEXEC);
-	if(fd == -1) {
+	if (fd == -1) {
 		print_error("netns open impossible");
 		return -1;
 	}
 	ret = setns(fd, CLONE_NEWNET);
-	if(ret == -1) {
+	if (ret == -1)
 		print_error("net setns impossible");
-	}
 	close(fd);
 	return ret;
 }
 
-int get_id_maps(long unsigned int *new_uid_root,
-		long unsigned int *interval,
+int get_id_maps(unsigned long *new_uid_root,
+		unsigned long *interval,
 		pid_t init)
 {
 	FILE *f = NULL;
@@ -264,7 +263,7 @@ int get_id_maps(long unsigned int *new_uid_root,
 	char *next;
 	char buf[64];
 	char vh[64];
-	long unsigned int uid;
+	unsigned long uid;
 
 	snprintf(vh, sizeof(vh), "/proc/%d/uid_map", init);
 	f = fopen(vh, "r");
@@ -272,7 +271,7 @@ int get_id_maps(long unsigned int *new_uid_root,
 		print_error("Can't open uid_map to get ids");
 		goto exit;
 	}
-	while(fgets(buf, sizeof(buf), f)) {
+	while (fgets(buf, sizeof(buf), f)) {
 		uid = strtoul(buf, &next, 10);
 		if (uid == 0) {
 			*new_uid_root = strtoul(next, &next, 10);
@@ -287,8 +286,8 @@ exit:
 	return ret;
 }
 
-int setup_id_maps(long unsigned int new_uid_root,
-		  long unsigned int interval,
+int setup_id_maps(unsigned long new_uid_root,
+		  unsigned long interval,
 		  pid_t child)
 {
 	int fd = -1;

@@ -53,8 +53,8 @@
 #include "user_setup.h"
 #include "utils.h"
 
-#define BUILD_BUG_ON(condition) static char __BUILDBUG[1 - 2*!!(condition)] __attribute__((unused));
-BUILD_BUG_ON(sizeof(PROGNAME) > 6)
+#define BUILD_BUG_ON(condition) static char __BUILDBUG[1 - 2*!!(condition)] __attribute__((unused))
+BUILD_BUG_ON(sizeof(PROGNAME) > 6);
 
 enum verbosity global_verbosity;
 static int global_cont_id;
@@ -134,18 +134,16 @@ static int run_init(struct container_config *config)
 {
 	if (config->init_cmd[0] == NULL)
 		return custom_init(config);
-	else {
+
 #ifndef NO_APPARMOR
-		if (config->init_profile && aa_change_onexec(config->init_profile)) {
-			print_error("Can't set apparmor profile");
-			return -1;
-		}
-#endif
-		execvp(config->init_cmd[0], config->init_cmd);
-		print_error("Can't run init");
+	if (config->init_profile && aa_change_onexec(config->init_profile)) {
+		print_error("Can't set apparmor profile");
 		return -1;
 	}
-	return 0;
+#endif
+	execvp(config->init_cmd[0], config->init_cmd);
+	print_error("Can't run init");
+	return -1;
 }
 
 static pid_t find_process(const unsigned char cont_id, pid_t nspid)
@@ -158,13 +156,13 @@ static pid_t find_process(const unsigned char cont_id, pid_t nspid)
 	snprintf(cgp, sizeof(cgp), "/sys/fs/cgroup/devices/" CG_PREFIX "%hhu/tasks", cont_id);
 	f = fopen(cgp, "r");
 	if (f != NULL) {
-		while(fgets(buf, sizeof(buf), f)) {
+		while (fgets(buf, sizeof(buf), f)) {
 			p = strtol(buf, NULL, 10);
 			snprintf(cgp, sizeof(cgp), "/proc/%d/status", p);
 			f2 = fopen(cgp, "r");
 			if (f2 != NULL) {
 				snprintf(cgp, sizeof(cgp), "NSpid:\t%d\t%d\n", p, nspid);
-				while(fgets(buf, sizeof(buf), f2))
+				while (fgets(buf, sizeof(buf), f2))
 					if (strncmp(buf, cgp, strlen(cgp)) == 0)
 						goto found;
 				fclose(f2);
@@ -210,7 +208,7 @@ ssize_t ps_container(const unsigned char cont_id,
 	snprintf(cgp, sizeof(cgp), "/sys/fs/cgroup/devices/" CG_PREFIX "%hhu/tasks", cont_id);
 	f = fopen(cgp, "r");
 	if (f != NULL) {
-		while(fgets(buf, sizeof(buf), f) && i < size) {
+		while (fgets(buf, sizeof(buf), f) && i < size) {
 			p = strtol(buf, NULL, 10);
 			pids[i] = p;
 			if (nspids) {
@@ -219,7 +217,7 @@ ssize_t ps_container(const unsigned char cont_id,
 				f2 = fopen(cgp, "r");
 				if (f2 != NULL) {
 					snprintf(cgp, sizeof(cgp), "NSpid:\t%d\t", p);
-					while(fgets(buf, sizeof(buf), f2)) {
+					while (fgets(buf, sizeof(buf), f2)) {
 						if (strncmp(buf, cgp, strlen(cgp)) == 0) {
 							p = strtol(buf+strlen(cgp), NULL, 10);
 							nspids[i] = p;
@@ -358,8 +356,8 @@ static inline void delete_child_container(void)
 
 void sigterm(int s)
 {
-       delete_child_container();
-       exit(0);
+	delete_child_container();
+	exit(0);
 }
 
 int container(struct container_config *config)
@@ -452,7 +450,7 @@ int container(struct container_config *config)
 				if (pre_mount_proc(config->chroot_path, config->proc_mount, config->new_root_uid))
 					return -1;
 			if (setrlimit(RLIMIT_NOFILE,
-				      & (struct rlimit) { .rlim_max = config->max_fds, .rlim_cur = config->max_fds})) {
+				      &(struct rlimit) { .rlim_max = config->max_fds, .rlim_cur = config->max_fds})) {
 				print_error("Can't set rlimit");
 				return -1;
 			}
@@ -481,7 +479,7 @@ int container(struct container_config *config)
 								"uts",
 								"user",
 								NULL}))
-					return -1;
+				return -1;
 		}
 		if ((child = forkpty(&pt, NULL, NULL, NULL)) == -1) {
 			print_error("fork2 impossible");
@@ -532,19 +530,17 @@ int container(struct container_config *config)
 			set_user(0, 0);
 			if (config->init_only)
 				return run_init(config);
-			else {
-				if ((child = fork()) == -1) {
-					print_error("fork2 impossible");
+			if ((child = fork()) == -1) {
+				print_error("fork2 impossible");
+				return -1;
+			} else if (child == 0) {
+				if (set_user(config->uid, 0))
 					return -1;
-				} else if (child == 0) {
-					if (set_user(config->uid, 0))
-						return -1;
-					exec(config->cmd, config->exec_profile);
-					print_error("exec impossibile");
-					return -1;
-				} else
-					return run_init(config);
-			}
+				exec(config->cmd, config->exec_profile);
+				print_error("exec impossibile");
+				return -1;
+			} else
+				return run_init(config);
 		} else {
 			if (write(socks[1], &child, sizeof(child)) != sizeof(child)) {
 				print_error("broken socket4");

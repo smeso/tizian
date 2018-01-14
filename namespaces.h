@@ -26,7 +26,7 @@
 int setup_netns(unsigned char *id, const char *ip_prefix, int enable_net);
 int delete_netns(const unsigned char id, const char *ip_prefix, int enable_net);
 int set_netns(const unsigned char id);
-int get_id_maps(long unsigned int *new_uid_root, long unsigned int *interval, pid_t init);
-int setup_id_maps(long unsigned int new_uid_root, long unsigned int interval, pid_t child);
+int get_id_maps(unsigned long *new_uid_root, unsigned long *interval, pid_t init);
+int setup_id_maps(unsigned long new_uid_root, unsigned long interval, pid_t child);
 
 #endif /* _TIZIAN_NAMESPACES_H */

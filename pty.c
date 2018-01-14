@@ -105,7 +105,7 @@ int pty_manager(struct termios *terms, int pt)
 
 		if (FD_ISSET(pt, &fd_in)) {
 			ret = read(pt, input, sizeof(input));
-			if (ret > 0){
+			if (ret > 0) {
 				if (write(0, input, ret) != ret) {
 					print_error("error on stdin");
 					break;

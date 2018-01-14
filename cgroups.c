@@ -35,11 +35,11 @@
 	}								\
 	fwrite(S, strlen(S), 1, f);					\
 	fclose(f);							\
-} while(0)
+} while (0)
 
 #define CREATE_CGGROUP(RESTYPE) do {						\
 	snprintf(cg, sizeof(cg), "/sys/fs/cgroup/" RESTYPE "/" CG_PREFIX "%hhu", id);	\
-	if(mkdir(cg, 0755)) {							\
+	if (mkdir(cg, 0755)) {							\
 		print_error("Can't create " RESTYPE " cgroup");			\
 		return -1;							\
 	}									\

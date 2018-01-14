@@ -47,8 +47,7 @@ struct passwd *mygetpwuid(uid_t uid)
 	struct passwd *u;
 
 	u = getpwuid(uid);
-	if (u == NULL)
-	{
+	if (u == NULL) {
 		FILE *f;
 		char buf[128];
 		char uu[10];
@@ -58,7 +57,7 @@ struct passwd *mygetpwuid(uid_t uid)
 		f = fopen("/etc/passwd", "r");
 		if (f != NULL) {
 			snprintf(uu, sizeof(uu), "%d", uid);
-			while(fgets(buf, sizeof(buf), f) && !found) {
+			while (fgets(buf, sizeof(buf), f) && !found) {
 				tmp = strchr(buf, '\n');
 				if (tmp != NULL)
 					buf[(int)(tmp-buf)] = '\0';
@@ -205,7 +204,7 @@ int set_environment(uid_t uid, int set_host)
 
 	f = fopen("/etc/hostname", "r");
 	if (f != NULL) {
-		if (fgets(buf, sizeof(buf), f) == NULL) {;
+		if (fgets(buf, sizeof(buf), f) == NULL) {
 			snprintf(buf, sizeof(buf), PROGNAME);
 		} else {
 			tmp = strchr(buf, '\n');
@@ -352,7 +351,7 @@ static int apply_seccomp(int all)
 				goto exit;
 			}
 		}
-		for (i = 0; i < ARRAY_LEN (socket_whitelist); i++) {
+		for (i = 0; i < ARRAY_LEN(socket_whitelist); i++) {
 			if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_EQ, socket_whitelist[i]))) {
 				print_error("seccomp socket rule add impossible");
 				goto exit;
@@ -378,17 +377,17 @@ static int apply_seccomp(int all)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	i = seccomp_arch_add (ctx, SCMP_ARCH_X86);
+	i = seccomp_arch_add(ctx, SCMP_ARCH_X86);
 	if (i < 0 && i != -EEXIST) {
 		print_error("Can't add seccomp arch x86");
 		goto exit;
 	}
-	i = seccomp_arch_add (ctx, SCMP_ARCH_X86_64);
+	i = seccomp_arch_add(ctx, SCMP_ARCH_X86_64);
 	if (i < 0 && i != -EEXIST) {
 		print_error("Can't add seccomp arch x86_64");
 		goto exit;
 	}
-	i = seccomp_arch_add (ctx, SCMP_ARCH_X32);
+	i = seccomp_arch_add(ctx, SCMP_ARCH_X32);
 	if (i < 0 && i != -EEXIST) {
 		print_error("Can't add seccomp arch x32");
 		goto exit;

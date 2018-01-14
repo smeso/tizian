@@ -30,11 +30,12 @@
 #include "container.h"
 #include "utils.h"
 
-static int go_to_background = 0;
+static int go_to_background;
 
 static void exit_usage(int code)
 {
 	FILE *f = stderr;
+
 	if (code == 0)
 		f = stdout;
 	fprintf(f, "usage: %s [-q|--quiet] create [-i|--ip-prefix IP_PREFIX] [-c|--cpu-shares CPU_SHARES]\n", LONG_PROGNAME);
@@ -325,7 +326,7 @@ int main(int argc, char *argv[])
 {
 	char *t;
 	ssize_t i;
-	
+
 	if (geteuid() != 0) {
 		fprintf(stderr, "You must be root to run %s.\n", LONG_PROGNAME);
 		return 1;
@@ -446,7 +447,7 @@ int main(int argc, char *argv[])
 		for (i = 0; i < size; ++i)
 			delete_container(ids[i]);
 		return 0;
-	} else if (CHK_CMD("--help") || CHK_CMD("-h") ) {
+	} else if (CHK_CMD("--help") || CHK_CMD("-h")) {
 		exit_usage(0);
 	} else
 		exit_usage(1);
