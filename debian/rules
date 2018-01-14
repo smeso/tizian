@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+# export NO_APPARMOR=1
+# export NO_SARA=1
+
+%:
+	dh $@
+
+ifndef NO_APPARMOR
+override_dh_install:
+	dh_apparmor --profile-name=tizian
+endif

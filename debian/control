@@ -1,0 +1,13 @@
+Source: tizian
+Maintainer: Salvatore Mesoraca <s.mesoraca16@gmail.com>
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 9), libseccomp-dev, libcap2, libapparmor-dev, libsara-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/smeso/tizian
+
+Package: tizian
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: better chrooting with containers
+ Use namespaces and cgroups to make safe chroots.
