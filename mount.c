@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mount_over.h"
 #include "utils.h"
 
 #define TMP_DIR_MOUNT "/tmp/mnttmp.XXXXXXX"
@@ -132,6 +133,53 @@ int pre_mount_proc(const char *new_root, int proc_mount, uid_t new_root_uid)
 	return 0;
 }
 
+static int mount_over_dir(const char *target)
+{
+	if (access(target, F_OK ))
+		return 0;
+	if (mount("tmpfs", target, "tmpfs",
+		  MS_NOSUID|MS_NOEXEC|MS_NODEV|MS_NOATIME|MS_RDONLY,
+		  "size=1,mode=0000")) {
+		print_error("proc mount impossible");
+		return -1;
+	}
+	return 0;
+}
+
+static int mount_over_file(const char *target)
+{
+	if (access(target, F_OK ))
+		return 0;
+	if (mount("/proc/cpuinfo", target, "none",
+		  MS_NOSUID|MS_NOEXEC|MS_NODEV|MS_NOATIME|MS_RDONLY|MS_BIND,
+		  NULL)) {
+		print_error("proc mount impossible");
+		return -1;
+	}
+	return 0;
+}
+
+static int mount_over(const char *dirs[], const char *files[])
+{
+	int i;
+
+	i = 0;
+	while (dirs[i] != NULL) {
+		if (mount_over_dir(dirs[i]))
+			return -1;
+		++i;
+	}
+
+	i = 0;
+	while (files[i] != NULL) {
+		if (mount_over_file(files[i]))
+			return -1;
+		++i;
+	}
+
+	return 0;
+}
+
 int mount_proc(uid_t new_root_uid)
 {
 	int fd1, fd2, ret = 0;
@@ -144,6 +192,9 @@ int mount_proc(uid_t new_root_uid)
 		print_error("proc mount impossible");
 		return -1;
 	}
+
+	if (mount_over(mount_over_dirs, mount_over_files))
+		return -1;
 
 	fd1 = open("/proc/mounts", O_RDONLY);
 	if (fd1 == -1) {
