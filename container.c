@@ -349,8 +349,8 @@ static inline void delete_child_container(void)
 	if (global_cont_id != NEW_CONT_ID) {
 		global_verbosity = QUIET;
 		delete_container(global_cont_id);
-		delete_cgroups(global_cont_id);
 		delete_netns(global_cont_id, global_config->ip_prefix, global_config->enable_net);
+		delete_cgroups(global_cont_id);
 	}
 }
 
@@ -360,12 +360,52 @@ void sigterm(int s)
 	exit(0);
 }
 
+int send_fd(int fd, int sock)
+{
+	struct msghdr msg = {0};
+	struct cmsghdr *cmsg;
+	char buf[CMSG_SPACE(sizeof(fd))];
+
+	msg.msg_control = buf;
+	msg.msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
+	memcpy(CMSG_DATA(cmsg), &fd, sizeof(fd));
+	msg.msg_controllen = cmsg->cmsg_len;
+	if((sendmsg(sock, &msg, 0)) < 0) {
+		print_error("Can't send fd");
+		return -1;
+	}
+	return 0;
+}
+
+int recv_fd(int sock)
+{
+	int fd;
+	struct msghdr msg = {0};
+	struct cmsghdr *cmsg;
+	char buf[CMSG_SPACE(sizeof(fd))];
+
+	msg.msg_control = buf;
+	msg.msg_controllen = sizeof(buf);
+	recvmsg(sock, &msg, 0);
+	cmsg = CMSG_FIRSTHDR(&msg);
+	if (cmsg == NULL || cmsg -> cmsg_type != SCM_RIGHTS) {
+		print_error("Can't recv fd");
+		return -1;
+	}
+	memcpy(&fd, CMSG_DATA(cmsg), sizeof(fd));
+	return fd;
+}
+
 int container(struct container_config *config)
 {
 	unsigned char cont_id = config->cont_id;
 	unsigned char cont_created = 0;
 	int ret = -1;
-	pid_t child;
+	pid_t child, ptmc = 0;
 	int pt;
 	int socks[2] = {0};
 	pid_t wait = 'w';
@@ -423,20 +463,11 @@ int container(struct container_config *config)
 		print_error("fork impossible");
 		goto cleanup;
 	} else if (child == 0) {
+		signal(SIGWINCH, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
 		close(socks[0]);
 		socks[0] = 0;
-#ifndef NO_SARA
-		if (config->use_sara && add_wxprot_self_flags(SARA_MPROTECT)) {
-			perror("Can't set sara flags in pty_manager");
-			return -1;
-		}
-#endif
-#ifndef NO_APPARMOR
-		if (config->intermediate_profile && aa_change_profile(config->intermediate_profile)) {
-			print_error("Can't set apparmor profile");
-			return -1;
-		}
-#endif
+
 		if (cont_created) {
 			if (set_netns(cont_id))
 				return -1;
@@ -546,21 +577,9 @@ int container(struct container_config *config)
 				print_error("broken socket4");
 				return -1;
 			}
-			close(socks[1]);
-			socks[1] = 0;
-			setsid();
-			if (prctl(PR_SET_CHILD_SUBREAPER, 1)) {
-				print_error("Can't set subreaper");
+			if (send_fd(pt, socks[1]))
 				return -1;
-			}
-			if (set_user(0, 0))
-				return -1;
-			if (set_user(0, 1))
-				return -1;
-
-			if (pty_manager(&terms, pt))
-				exit(1);
-			return wait_all();
+			return 0;
 		}
 	} else {
 #ifndef NO_SARA
@@ -575,6 +594,33 @@ int container(struct container_config *config)
 		if (read(socks[0], &child, sizeof(child)) != sizeof(child)) {
 			print_error("broken socket5");
 			goto cleanup;
+		}
+		pt = recv_fd(socks[0]);
+		if (pt < 0)
+			goto cleanup;
+		if ((ptmc = fork()) == -1) {
+			print_error("pty_manager fork impossible");
+			goto cleanup;
+		} else if (ptmc == 0) {
+			signal(SIGWINCH, SIG_DFL);
+			signal(SIGTERM, SIG_DFL);
+			close(socks[0]);
+			socks[0] = 0;
+			setsid();
+#ifndef NO_APPARMOR
+			if (config->intermediate_profile &&
+			    aa_change_profile(config->intermediate_profile)) {
+				print_error("Can't set apparmor profile");
+				return 1;
+			}
+#endif
+			if (set_user(0, 0))
+				return 1;
+			if (set_user(0, 1))
+				return 1;
+			if (pty_manager(&terms, pt))
+				return 1;
+			return 0;
 		}
 		if (cont_created && config->new_root_uid != 0) {
 			if (write(socks[0], &wait, 1) != 1) {
@@ -607,6 +653,8 @@ int container(struct container_config *config)
 	return 0;
 
 cleanup:
+	if (ptmc)
+		kill(ptmc, SIGKILL);
 	tcsetattr(0, TCSANOW, &terms);
 cleanup_preterm:
 	if (cont_created)

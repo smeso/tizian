@@ -85,8 +85,10 @@ static void exit_usage(int code)
 	fprintf(f, "						(default: the user shell according to /etc/passwd).\n");
 	fprintf(f, "-E, --init-cmd INIT_CMD				The init program to run (default: a minimal built-in\n");
 	fprintf(f, "						init process).\n");
-	fprintf(f, "-P, --init-profile APPARMOR_PROFILE		AppArmor profile for init (default: none).\n");
-	fprintf(f, "-d, --intermediate-profile APPARMOR_PROFILE	AppArmor profile for intermediate process (default: none).\n");
+	fprintf(f, "-P, --init-profile APPARMOR_PROFILE		AppArmor profile for init (default: 'tizian_init', use 'none' to\n");
+	fprintf(f, "						disable).\n");
+	fprintf(f, "-d, --intermediate-profile APPARMOR_PROFILE	AppArmor profile for intermediate process (default:\n");
+	fprintf(f, "						'tizian_intermediate', use 'none' to disable).\n");
 	fprintf(f, "-a, --cmd-profile APPARMOR_PROFILE		AppArmor profile for the command to execute (default: none).\n");
 	fprintf(f, "-U, --userns-slot SLOT				UID and GID map slot. Available slots are form 0 to 65536.\n");
 	fprintf(f, "						The slot is multiplied by 65535 to get the UID/GID map\n");
@@ -313,6 +315,10 @@ static void set_config(int argc, char *argv[],
 			exit_usage(1);
 		}
 	} while (1);
+	if (!config.init_profile)
+		config.init_profile = strdup("tizian_init");
+	if (!config.intermediate_profile)
+		config.intermediate_profile = strdup("tizian_intermediate");
 }
 
 static int cmpids(const void *a, const void *b)

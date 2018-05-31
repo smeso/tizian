@@ -7,11 +7,23 @@
 #	#include <local/tizian>
 #}
 
-profile tizian_init {
-	signal receive set=kill peer=unconfined,
-	signal receive set=term peer=unconfined,
-}
 
-#profile tizian_intermediate flags=(complain) {
-#
-#}
+profile tizian_init {
+  signal receive set=kill peer=unconfined,
+  signal receive set=term peer=unconfined,
+
+}
+profile tizian_intermediate {
+  #include <abstractions/base>
+
+  capability setgid,
+  capability setpcap,
+  capability setuid,
+
+  /etc/hostname r,
+  /etc/locale.gen r,
+  /etc/nsswitch.conf r,
+  /etc/passwd r,
+  /etc/timezone r,
+
+}
