@@ -1,3 +1,9 @@
+tizian (0.2-1) unstable; urgency=low
+
+  * version bump
+
+ -- Salvatore Mesoraca <s.mesoraca16@gmail.com>  Mon, 28 May 2018 12:18:00 +0200
+
 tizian (0.1-1) unstable; urgency=low
 
   * source package created
