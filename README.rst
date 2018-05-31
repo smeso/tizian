@@ -77,8 +77,10 @@ Usage
 							(default: the user shell according to /etc/passwd).
 	-E, --init-cmd INIT_CMD				The init program to run (default: a minimal built-in
 							init process).
-	-P, --init-profile APPARMOR_PROFILE		AppArmor profile for init (default: none).
-	-d, --intermediate-profile APPARMOR_PROFILE	AppArmor profile for intermediate process (default: none).
+	-P, --init-profile APPARMOR_PROFILE		AppArmor profile for init (default: 'tizian_init', use 'none' to
+							disable).
+	-d, --intermediate-profile APPARMOR_PROFILE	AppArmor profile for intermediate process (default:
+							'tizian_intermediate', use 'none' to disable).
 	-a, --cmd-profile APPARMOR_PROFILE		AppArmor profile for the command to execute (default: none).
 	-U, --userns-slot SLOT				UID and GID map slot. Available slots are form 0 to 65536.
 							The slot is multiplied by 65535 to get the UID/GID map
