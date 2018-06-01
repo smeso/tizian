@@ -590,7 +590,6 @@ int container(struct container_config *config)
 #endif
 		close(socks[1]);
 		socks[1] = 0;
-		global_child = child;
 		if (read(socks[0], &child, sizeof(child)) != sizeof(child)) {
 			print_error("broken socket5");
 			goto cleanup;
@@ -602,7 +601,6 @@ int container(struct container_config *config)
 			print_error("pty_manager fork impossible");
 			goto cleanup;
 		} else if (ptmc == 0) {
-			signal(SIGWINCH, SIG_DFL);
 			signal(SIGTERM, SIG_DFL);
 			close(socks[0]);
 			socks[0] = 0;
@@ -622,6 +620,7 @@ int container(struct container_config *config)
 				return 1;
 			return 0;
 		}
+		global_child = ptmc;
 		if (cont_created && config->new_root_uid != 0) {
 			if (write(socks[0], &wait, 1) != 1) {
 				print_error("broken socket6");

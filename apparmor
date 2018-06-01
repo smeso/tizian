@@ -11,6 +11,7 @@
 profile tizian_init {
   signal receive set=kill peer=unconfined,
   signal receive set=term peer=unconfined,
+  signal receive set=winch peer=unconfined,
 
 }
 profile tizian_intermediate {
@@ -19,6 +20,8 @@ profile tizian_intermediate {
   capability setgid,
   capability setpcap,
   capability setuid,
+
+  signal send set=winch peer=unconfined,
 
   /etc/hostname r,
   /etc/locale.gen r,
