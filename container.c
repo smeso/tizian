@@ -413,7 +413,7 @@ int container(struct container_config *config)
 
 #ifndef NO_SARA
 	if (config->use_sara && add_wxprot_self_flags(SARA_MPROTECT)) {
-		perror("Can't set sara flags in pty_manager");
+		perror("Can't set sara flags.");
 		return -1;
 	}
 #endif
@@ -608,7 +608,7 @@ int container(struct container_config *config)
 #ifndef NO_APPARMOR
 			if (config->intermediate_profile &&
 			    aa_change_profile(config->intermediate_profile)) {
-				print_error("Can't set apparmor profile");
+				print_error("Can't set apparmor profile in pty_manager");
 				return 1;
 			}
 #endif
